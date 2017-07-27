@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve1.png">
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve2.png">
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve3.png">
-<meta property="og:updated_time" content="2017-07-27T07:25:19.095Z">
+<meta property="og:updated_time" content="2017-07-27T07:29:25.586Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="php弱类型">
 <meta name="twitter:description" content="PHP弱类型是PHP自身的一种特性，它能根据某个变量的上下文语境来定义其类型，而无须开发者对变量类型显式定义或转换。然而，弱类型特性在给开发者带来便利的同时，也引发了一些安全问题。">
@@ -111,14 +111,14 @@
 <h5 id="array-search"><a href="#array-search" class="headerlink" title="array_search():"></a>array_search():</h5><p><img src="/2017/07/27/php弱类型/array1.png" alt=""><br><img src="/2017/07/27/php弱类型/array2.png" alt=""><br>可以看到，如果strict参数没有提供，array_search()就会使用松散比较来判断$needle是否在$haystack中。于是，<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$array</span>=[0,1,2,<span class="string">'3'</span>];</div><div class="line">array_search(<span class="string">'abc'</span>, <span class="variable">$array</span>);</div><div class="line">array_search(<span class="string">'1bc'</span>, <span class="variable">$array</span>);</div></pre></td></tr></table></figure></p>
 <p>上面的两个结果都不为false。其中’abc’匹配0，’1bc’匹配1。</p>
 <h3 id="PHP弱类型引发的漏洞"><a href="#PHP弱类型引发的漏洞" class="headerlink" title="PHP弱类型引发的漏洞"></a>PHP弱类型引发的漏洞</h3><p>下面就CVE-2017-9090来分析一下<br><img src="/2017/07/27/php弱类型/cve1.png" alt=""><br>描述中讲得很清楚了，我们直接搭建环境跟踪到漏洞代码reg.php。<br><img src="/2017/07/27/php弱类型/cve2.png" alt=""><br>可以看到这里实际要实现的是<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">strtolower(<span class="variable">$_POST</span>[‘captcha’]) == strtolower(<span class="variable">$_SESSION</span>[‘captcha’][‘code’])</div></pre></td></tr></table></figure></p>
-<p>发现此处可以利用<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">```bash</div><div class="line">$_SESSION[‘captcha’][‘code’] === NULL</div></pre></td></tr></table></figure></p>
+<p>发现此处可以利用NULL==””来构造，即让<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$_SESSION</span>[‘captcha’][‘code’] === NULL</div></pre></td></tr></table></figure></p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$_POST</span>[‘captcha’] === “”</div></pre></td></tr></table></figure>
 <p>而实现的操作只需要直接向reg.php发送POST请求，并保证在此之前不访问验证码图片URL即可。<br><img src="/2017/07/27/php弱类型/cve3.png" alt=""></p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://lemon666.github.io/2017/07/27/php弱类型/" data-id="cj5m48hti0000e4vw4gzdiim5" class="article-share-link">Share</a>
+      <a data-url="https://lemon666.github.io/2017/07/27/php弱类型/" data-id="cj5m4c7j60000kkvwkhrvqzdu" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php/">php</a></li></ul>
