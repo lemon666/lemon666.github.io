@@ -358,8 +358,8 @@ body {
   text-align: center;
   height: 40px;
   position: absolute;
-  top: 50%;
-  left: 0;
+  top: 90%;
+  left: 2;
   margin-top: -20px;
 }
 #logo,
@@ -373,6 +373,8 @@ body {
   font-size: 40px;
   line-height: 40px;
   letter-spacing: 2px;
+  float: right;
+  margin-right: 80px;
 }
 #subtitle {
   font-size: 16px;
