@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve1.png">
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve2.png">
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve3.png">
-<meta property="og:updated_time" content="2017-07-27T07:31:06.984Z">
+<meta property="og:updated_time" content="2017-07-27T07:32:08.345Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="php弱类型">
 <meta name="twitter:description" content="PHP弱类型是PHP自身的一种特性，它能根据某个变量的上下文语境来定义其类型，而无须开发者对变量类型显式定义或转换。然而，弱类型特性在给开发者带来便利的同时，也引发了一些安全问题。">
@@ -106,7 +106,7 @@
 <p>故认为<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="string">"0e1111"</span> == <span class="string">"0e1234567"</span></div></pre></td></tr></table></figure></p>
 <p>另外， 当字符串是0x开头时，PHP会将此字符串隐式转换成为十进制然后再进行比较。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="string">"0x1e240"</span>==<span class="string">"123456"</span></div></pre></td></tr></table></figure></p>
 <h3 id="内置函数"><a href="#内置函数" class="headerlink" title="内置函数"></a>内置函数</h3><p>PHP中许多内置函数具备参数松散性。</p>
-<h5 id="swich"><a href="#swich" class="headerlink" title="swich():"></a>swich():</h5><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$i</span> =<span class="string">"2abc"</span>;</div><div class="line">   switch (<span class="variable">$i</span>) &#123;</div><div class="line">       <span class="keyword">case</span> 0:</div><div class="line">       	<span class="built_in">echo</span> <span class="string">"a"</span>;<span class="built_in">break</span>;</div><div class="line">       <span class="keyword">case</span> 1:</div><div class="line">       	<span class="built_in">echo</span> <span class="string">"b"</span>;<span class="built_in">break</span>;</div><div class="line">       <span class="keyword">case</span> 2:</div><div class="line">            <span class="built_in">echo</span> <span class="string">"c"</span>;<span class="built_in">break</span>;</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<h5 id="swich"><a href="#swich" class="headerlink" title="swich():"></a>swich():</h5><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$i</span> =<span class="string">"2abc"</span>;</div><div class="line">   switch (<span class="variable">$i</span>) &#123;</div><div class="line">       <span class="keyword">case</span> 0:</div><div class="line">       	<span class="built_in">echo</span> <span class="string">"a"</span>;<span class="built_in">break</span>;</div><div class="line">       <span class="keyword">case</span> 1:</div><div class="line">       	<span class="built_in">echo</span> <span class="string">"b"</span>;<span class="built_in">break</span>;</div><div class="line">       <span class="keyword">case</span> 2:</div><div class="line">           <span class="built_in">echo</span> <span class="string">"c"</span>;<span class="built_in">break</span>;</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
 <p>以上程序输出的是c，因为switch()函数将$i进行了类型转换，转换结果为2。</p>
 <h5 id="array-search"><a href="#array-search" class="headerlink" title="array_search():"></a>array_search():</h5><p><img src="/2017/07/27/php弱类型/array1.png" alt=""><br><img src="/2017/07/27/php弱类型/array2.png" alt=""><br>可以看到，如果strict参数没有提供，array_search()就会使用松散比较来判断$needle是否在$haystack中。于是，<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$array</span>=[0,1,2,<span class="string">'3'</span>];</div><div class="line">array_search(<span class="string">'abc'</span>, <span class="variable">$array</span>);</div><div class="line">array_search(<span class="string">'1bc'</span>, <span class="variable">$array</span>);</div></pre></td></tr></table></figure></p>
 <p>上面的两个结果都不为false。其中’abc’匹配0，’1bc’匹配1。</p>
@@ -118,7 +118,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://lemon666.github.io/2017/07/27/php弱类型/" data-id="cj5m4eedz00005gvw1cm5mfoo" class="article-share-link">Share</a>
+      <a data-url="https://lemon666.github.io/2017/07/27/php弱类型/" data-id="cj5m4fwf50000m4vw52ls67y3" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php/">php</a></li></ul>
