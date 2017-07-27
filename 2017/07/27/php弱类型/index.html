@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve1.png">
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve2.png">
 <meta property="og:image" content="https://lemon666.github.io/2017/07/27/php弱类型/cve3.png">
-<meta property="og:updated_time" content="2017-07-27T07:29:25.586Z">
+<meta property="og:updated_time" content="2017-07-27T07:31:06.984Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="php弱类型">
 <meta name="twitter:description" content="PHP弱类型是PHP自身的一种特性，它能根据某个变量的上下文语境来定义其类型，而无须开发者对变量类型显式定义或转换。然而，弱类型特性在给开发者带来便利的同时，也引发了一些安全问题。">
@@ -99,7 +99,7 @@
       
         <p>PHP弱类型是PHP自身的一种特性，它能根据某个变量的上下文语境来定义其类型，而无须开发者对变量类型显式定义或转换。然而，弱类型特性在给开发者带来便利的同时，也引发了一些安全问题。</p>
 <a id="more"></a>
-<h3 id="loose-comparison"><a href="#loose-comparison" class="headerlink" title="loose comparison(==)"></a>loose comparison(==)</h3><p>PHP中类型和比较运算符有松散比较(\==)和严格比较(=\==)两种形式。由于很多程序员的编程习惯，他们在比较运算中经常使用的是”\==”而不是”=\==“。但其实在loose comparison(==)模式下，比较运算将有以下规律：</p>
+<h3 id="loose-comparison"><a href="#loose-comparison" class="headerlink" title="loose comparison(==)"></a>loose comparison(==)</h3><p>PHP中类型和比较运算符有松散比较(==)和严格比较(===)两种形式。由于很多程序员的编程习惯，他们在比较运算中经常使用的是”==”而不是”===“。但其实在loose comparison(==)模式下，比较运算将有以下规律：</p>
 <p><img src="/2017/07/27/php弱类型/==.png" alt=""><br>其中，有几处比较结果值得注意：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">NULL == 0；</div><div class="line">NULL == <span class="string">""</span>；</div><div class="line"><span class="string">"php"</span> == 0;</div></pre></td></tr></table></figure></p>
 <p>除了在对两个不同类型的变量进行比较运算时会进行隐式转换，有些情况下还会对相同类型变量进行隐式转换,如：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="string">"0e1111"</span> == <span class="string">"0e1234567"</span></div><div class="line">md5(<span class="string">"240610708"</span>) == md5(<span class="string">"QNKCDZO"</span>)</div><div class="line">sha1(<span class="string">"aaroZmOk"</span>) == sha1(<span class="string">"aaK1STfY"</span>)</div></pre></td></tr></table></figure></p>
 <p>由于上述所有string型变量都是以”0e”开头，PHP会将其类型隐式转换为float型，而：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">0e1111 = 0*10^1111 = 0，</div><div class="line">0e1234567 = 0*10^1234567 = 0，</div></pre></td></tr></table></figure></p>
@@ -118,7 +118,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://lemon666.github.io/2017/07/27/php弱类型/" data-id="cj5m4c7j60000kkvwkhrvqzdu" class="article-share-link">Share</a>
+      <a data-url="https://lemon666.github.io/2017/07/27/php弱类型/" data-id="cj5m4eedz00005gvw1cm5mfoo" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php/">php</a></li></ul>
