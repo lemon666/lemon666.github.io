@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>PHP Object Injection | Lemon&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="PHP对象注入是CTF中常见的考点，也是挖掘通用型漏洞时可以关注的一个点。">
+<meta name="keywords" content="php">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP Object Injection">
+<meta property="og:url" content="https://lemon666.github.io/2017/07/28/php-object-injection/index.html">
+<meta property="og:site_name" content="Lemon&#39;s Blog">
+<meta property="og:description" content="PHP对象注入是CTF中常见的考点，也是挖掘通用型漏洞时可以关注的一个点。">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/php_object_injection.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/serialize.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/unserialize.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/s1.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/s2.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/us1.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/us2.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/magic.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e1.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e1-2.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e1-3.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e2.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e2-1.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e2-2.png">
+<meta property="og:updated_time" content="2017-07-28T01:29:08.442Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PHP Object Injection">
+<meta name="twitter:description" content="PHP对象注入是CTF中常见的考点，也是挖掘通用型漏洞时可以关注的一个点。">
+<meta name="twitter:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/php_object_injection.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Lemon&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Lemon&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://lemon666.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-php-object-injection" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/07/28/php-object-injection/" class="article-date">
+  <time datetime="2017-07-28T01:05:38.000Z" itemprop="datePublished">2017-07-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/安全研究/">安全研究</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PHP Object Injection
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>PHP对象注入是CTF中常见的考点，也是挖掘通用型漏洞时可以关注的一个点。<br><a id="more"></a><br>PHP对象注入是一个应用级漏洞，它允许攻击者执行不同类型的恶意攻击，如代码注入、SQL注入、路径遍历和应用程序拒绝服务，这取决于程序代码。漏洞发生场景是用户提供的输入没有经过处理直接传递给unserialize()这个函数。由于PHP允许对象的序列化，攻击者可以构造一个特定的序列化字符串给unserialize()调用，导致在应用范围内任意的PHP对象注入。<br>构成PHP对象注入需要满足两个条件：<br>（1）：应用程序中必须有一个类实现了一个PHP的magic方法（如__wakeup或__destruct）可以用来进行恶意攻击。<br>（2）：当调用unserialize()函数时所有利用的类必须已经声明，或者是这些类支持对象自动填充<br><img src="/2017/07/28/php-object-injection/php_object_injection.png" alt=""><br>想要理解这个漏洞，我们还需要具备一些PHP基本知识。</p>
+<h3 id="serialize-and-unserialize"><a href="#serialize-and-unserialize" class="headerlink" title="serialize() and unserialize()"></a>serialize() and unserialize()</h3><p>什么是PHP序列化与反序列化？<br>serialize()：该函数能够将对象转换成记录对象信息的字符串。<br><img src="/2017/07/28/php-object-injection/serialize.png" alt=""><br>unserialize()：该函数实现将serialize生成的字符串转换回对象。<br><img src="/2017/07/28/php-object-injection/unserialize.png" alt=""><br>这个过程的意义在于能够方便对象的重用。</p>
+<h3 id="serialize"><a href="#serialize" class="headerlink" title="serialize()"></a>serialize()</h3><p>下面通过一个例子来看看序列化之后的格式<br><img src="/2017/07/28/php-object-injection/s1.png" alt=""><br>序列化之后的结果<br><img src="/2017/07/28/php-object-injection/s2.png" alt=""><br>O代表object对象，object名的长度为5，内容为“House”。对象中包含2个参数，第一个参数名类型为string，长度为4，参数名具体为“addr“，然后紧跟这个参数的值，参数类型为string，长度为11，内容为“Wall Street”。第二个参数名类型为string，长度为4，参数名具体为“area“，紧跟这个参数的值，参数类型为int，内容为180。</p>
+<h3 id="unserialize"><a href="#unserialize" class="headerlink" title="unserialize()"></a>unserialize()</h3><p>当我们需要使用这个对象时，利用unserialize()重建对象。<br><img src="/2017/07/28/php-object-injection/us1.png" alt=""><br>调用成员方法可以看到对象已重建<br><img src="/2017/07/28/php-object-injection/us2.png" alt=""></p>
+<h3 id="Magic-Methods"><a href="#Magic-Methods" class="headerlink" title="Magic Methods"></a>Magic Methods</h3><p>认识了序列化和反序列化操作之后，我们还需要了解一下php中保留的magic方法。<br>PHP 将所有以 __（两个下划线）开头的类方法保留为magic方法<br><img src="/2017/07/28/php-object-injection/magic.png" alt=""><br>其中，</p>
+<h6 id="construct-：构造函数，在对象创建时自动调用；"><a href="#construct-：构造函数，在对象创建时自动调用；" class="headerlink" title="__construct ：构造函数，在对象创建时自动调用；"></a>__construct ：构造函数，在对象创建时自动调用；</h6><h6 id="destruct：析构函数，在对象销毁时自动调用；"><a href="#destruct：析构函数，在对象销毁时自动调用；" class="headerlink" title="__destruct：析构函数，在对象销毁时自动调用；"></a>__destruct：析构函数，在对象销毁时自动调用；</h6><h6 id="sleep：在一个对象被序列化之前自动调用；"><a href="#sleep：在一个对象被序列化之前自动调用；" class="headerlink" title="__sleep：在一个对象被序列化之前自动调用；"></a>__sleep：在一个对象被序列化之前自动调用；</h6><h6 id="wakeup：在一个对象被反序列化之前自动调用；"><a href="#wakeup：在一个对象被反序列化之前自动调用；" class="headerlink" title="__wakeup：在一个对象被反序列化之前自动调用；"></a>__wakeup：在一个对象被反序列化之前自动调用；</h6><h6 id="toString：在一个类被当成字符串时自动调用；"><a href="#toString：在一个类被当成字符串时自动调用；" class="headerlink" title="__toString：在一个类被当成字符串时自动调用；"></a>__toString：在一个类被当成字符串时自动调用；</h6><p>现在我们知道PHP反序列化是如何工作的了。下面看一下如何具体利用。</p>
+<h3 id="Example1"><a href="#Example1" class="headerlink" title="Example1"></a>Example1</h3><p>延伸上面的例子，House类定义了一个__toString()函数为了让应用程序能够将类作为一个字符串输出(echo $obj)。<br><img src="/2017/07/28/php-object-injection/e1.png" alt=""><br>但是与此同时，另一个php文件中可能也定义了一个类允许__toString()函数读取某个文件。<br><img src="/2017/07/28/php-object-injection/e1-2.png" alt=""><br>当我们在此构造字符串对File这个类进行反序列化的话，就能读取到flag.txt的内容了。<br><img src="/2017/07/28/php-object-injection/e1-3.png" alt=""></p>
+<h3 id="Example2"><a href="#Example2" class="headerlink" title="Example2"></a>Example2</h3><p>当然，实际操作中可能不会直接在Get请求获取需要反序列化的字符串，而可能在cookie中获取字符串内容进行反序列化。<br><img src="/2017/07/28/php-object-injection/e2.png" alt=""><br>此时我们可以拦截请求修改cookie进行恶意利用。<br><img src="/2017/07/28/php-object-injection/e2-1.png" alt=""><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">URLdecode(Cookie)：data=O:7:&quot;Example&quot;:1:&#123;s:18:&quot;%00Example%00something&quot;;s:10:&quot;phpinfo();&quot;;&#125;</div></pre></td></tr></table></figure></p>
+<p>由于cookie中包含有分号等特殊字符时，会导致被截断，所以这里要进行urlencode。还有当something是私有变量时，需要在变量名前面带上类名。构造成功后执行了phpinfo()。<br><img src="/2017/07/28/php-object-injection/e2-2.png" alt=""></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://lemon666.github.io/2017/07/28/php-object-injection/" data-id="cj5n69wq600006cvw917ww31y" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php/">php</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/07/27/php弱类型/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">php弱类型</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/安全研究/">安全研究</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/">php</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/php/" style="font-size: 10px;">php</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">July 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/07/28/php-object-injection/">PHP Object Injection</a>
+          </li>
+        
+          <li>
+            <a href="/2017/07/27/php弱类型/">php弱类型</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 lemon<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
