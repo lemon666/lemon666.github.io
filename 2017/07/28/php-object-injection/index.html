@@ -26,7 +26,12 @@
 <meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e2.png">
 <meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e2-1.png">
 <meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e2-2.png">
-<meta property="og:updated_time" content="2017-07-28T01:29:08.442Z">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e3.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e3-1.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e3-2.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e3-3.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/07/28/php-object-injection/e3-4.png">
+<meta property="og:updated_time" content="2017-07-29T05:27:03.634Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PHP Object Injection">
 <meta name="twitter:description" content="PHP对象注入是CTF中常见的考点，也是挖掘通用型漏洞时可以关注的一个点。">
@@ -112,13 +117,14 @@
 <h3 id="Magic-Methods"><a href="#Magic-Methods" class="headerlink" title="Magic Methods"></a>Magic Methods</h3><p>认识了序列化和反序列化操作之后，我们还需要了解一下php中保留的magic方法。<br>PHP 将所有以 __（两个下划线）开头的类方法保留为magic方法<br><img src="/2017/07/28/php-object-injection/magic.png" alt=""><br>其中，</p>
 <h6 id="construct-：构造函数，在对象创建时自动调用；"><a href="#construct-：构造函数，在对象创建时自动调用；" class="headerlink" title="__construct ：构造函数，在对象创建时自动调用；"></a>__construct ：构造函数，在对象创建时自动调用；</h6><h6 id="destruct：析构函数，在对象销毁时自动调用；"><a href="#destruct：析构函数，在对象销毁时自动调用；" class="headerlink" title="__destruct：析构函数，在对象销毁时自动调用；"></a>__destruct：析构函数，在对象销毁时自动调用；</h6><h6 id="sleep：在一个对象被序列化之前自动调用；"><a href="#sleep：在一个对象被序列化之前自动调用；" class="headerlink" title="__sleep：在一个对象被序列化之前自动调用；"></a>__sleep：在一个对象被序列化之前自动调用；</h6><h6 id="wakeup：在一个对象被反序列化之前自动调用；"><a href="#wakeup：在一个对象被反序列化之前自动调用；" class="headerlink" title="__wakeup：在一个对象被反序列化之前自动调用；"></a>__wakeup：在一个对象被反序列化之前自动调用；</h6><h6 id="toString：在一个类被当成字符串时自动调用；"><a href="#toString：在一个类被当成字符串时自动调用；" class="headerlink" title="__toString：在一个类被当成字符串时自动调用；"></a>__toString：在一个类被当成字符串时自动调用；</h6><p>现在我们知道PHP反序列化是如何工作的了。下面看一下如何具体利用。</p>
 <h3 id="Example1"><a href="#Example1" class="headerlink" title="Example1"></a>Example1</h3><p>延伸上面的例子，House类定义了一个__toString()函数为了让应用程序能够将类作为一个字符串输出(echo $obj)。<br><img src="/2017/07/28/php-object-injection/e1.png" alt=""><br>但是与此同时，另一个php文件中可能也定义了一个类允许__toString()函数读取某个文件。<br><img src="/2017/07/28/php-object-injection/e1-2.png" alt=""><br>当我们在此构造字符串对File这个类进行反序列化的话，就能读取到flag.txt的内容了。<br><img src="/2017/07/28/php-object-injection/e1-3.png" alt=""></p>
-<h3 id="Example2"><a href="#Example2" class="headerlink" title="Example2"></a>Example2</h3><p>当然，实际操作中可能不会直接在Get请求获取需要反序列化的字符串，而可能在cookie中获取字符串内容进行反序列化。<br><img src="/2017/07/28/php-object-injection/e2.png" alt=""><br>此时我们可以拦截请求修改cookie进行恶意利用。<br><img src="/2017/07/28/php-object-injection/e2-1.png" alt=""><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">URLdecode(Cookie)：data=O:7:&quot;Example&quot;:1:&#123;s:18:&quot;%00Example%00something&quot;;s:10:&quot;phpinfo();&quot;;&#125;</div></pre></td></tr></table></figure></p>
+<h3 id="Example2"><a href="#Example2" class="headerlink" title="Example2"></a>Example2</h3><p>当然，实际操作中可能不会直接在Get请求获取需要反序列化的字符串，而可能在cookie中获取字符串内容进行反序列化。下面这个Example类定义了一个__wakeup()函数用来执行something变量的内容。上面讲过__wakeup()函数将在一个对象被反序列之前自动调用。因此我们只要在cookie中构造something变量即可。<br><img src="/2017/07/28/php-object-injection/e2.png" alt=""><br>拦截请求修改cookie进行恶意利用。<br><img src="/2017/07/28/php-object-injection/e2-1.png" alt=""><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">URLdecode(Cookie)：data=O:7:&quot;Example&quot;:1:&#123;s:18:&quot;%00Example%00something&quot;;s:10:&quot;phpinfo();&quot;;&#125;</div></pre></td></tr></table></figure></p>
 <p>由于cookie中包含有分号等特殊字符时，会导致被截断，所以这里要进行urlencode。还有当something是私有变量时，需要在变量名前面带上类名。构造成功后执行了phpinfo()。<br><img src="/2017/07/28/php-object-injection/e2-2.png" alt=""></p>
+<h3 id="Example3"><a href="#Example3" class="headerlink" title="Example3"></a>Example3</h3><p>上面的例子我们利用了__wakeup()函数的操作来实现了我们的攻击。但是，有时候__wakeup()函数恰恰是定义来阻止我们进行攻击的。那么这个时候，要怎么办呢？<br>CVE-2016-7124涉及的就是这个问题，我们可以简单地理解为当一个对象被反序列化时，序列化字符串表示对象属性个数的值大于真实个数的属性时就会跳过 __wakeup 的执行。<br><img src="/2017/07/28/php-object-injection/e3.png" alt=""><br>下面就Example2的例子来进行修改演示。<br>在Example类中，设计eva1()函数用来执行something变量的内容，__wakeup()函数对something变量中的右括号【’)’】进行过滤，而__destruct()函数打印something变量的内容并调用eva1()函数。然后传入构造好的字符串进行反序列化。<br><img src="/2017/07/28/php-object-injection/e3-1.png" alt=""><br>可以看到输出结果，”phpinfo();”被过滤成了”phpinfo(;”，因此eva1()函数执行这个字符串时是不成功的。于是页面仅输出了phpinfo(;<br><img src="/2017/07/28/php-object-injection/e3-2.png" alt=""><br>但是当我们把序列化字符串中对象属性个数1改成2时，<br><img src="/2017/07/28/php-object-injection/e3-3.png" alt=""><br>再次运行查看结果，something变量的内容没有被过滤，而phpinfo();也被顺利执行，也就是说成功绕过了__wakeup()函数。<br><img src="/2017/07/28/php-object-injection/e3-4.png" alt=""></p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://lemon666.github.io/2017/07/28/php-object-injection/" data-id="cj5n69wq600006cvw917ww31y" class="article-share-link">Share</a>
+      <a data-url="https://lemon666.github.io/2017/07/28/php-object-injection/" data-id="cj5ounl2d0000u0tpu094cec0" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php/">php</a></li></ul>
