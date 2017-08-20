@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>浅谈二次注入漏洞 | Lemon&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="在PHP代码审计中，二次注入漏洞也是常见的安全问题之一。二次注入漏洞本质上就是SQL注入问题，但是它比普通的SQL注入漏洞更难利用。由于它依赖于代码逻辑而产生，因此常常需要手工挖掘。本文将对二次注入漏洞进行个别的场景介绍以及利用门槛分析。">
+<meta name="keywords" content="php">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈二次注入漏洞">
+<meta property="og:url" content="https://lemon666.github.io/2017/08/20/二次注入/index.html">
+<meta property="og:site_name" content="Lemon&#39;s Blog">
+<meta property="og:description" content="在PHP代码审计中，二次注入漏洞也是常见的安全问题之一。二次注入漏洞本质上就是SQL注入问题，但是它比普通的SQL注入漏洞更难利用。由于它依赖于代码逻辑而产生，因此常常需要手工挖掘。本文将对二次注入漏洞进行个别的场景介绍以及利用门槛分析。">
+<meta property="og:image" content="https://lemon666.github.io/2017/08/20/二次注入/is_num.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/08/20/二次注入/shu.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/08/20/二次注入/-%27.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/08/20/二次注入/+%27.png">
+<meta property="og:updated_time" content="2017-08-20T12:09:19.853Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈二次注入漏洞">
+<meta name="twitter:description" content="在PHP代码审计中，二次注入漏洞也是常见的安全问题之一。二次注入漏洞本质上就是SQL注入问题，但是它比普通的SQL注入漏洞更难利用。由于它依赖于代码逻辑而产生，因此常常需要手工挖掘。本文将对二次注入漏洞进行个别的场景介绍以及利用门槛分析。">
+<meta name="twitter:image" content="https://lemon666.github.io/2017/08/20/二次注入/is_num.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Lemon&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Lemon&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://lemon666.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-二次注入" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/08/20/二次注入/" class="article-date">
+  <time datetime="2017-08-20T07:06:39.000Z" itemprop="datePublished">2017-08-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/安全研究/">安全研究</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      浅谈二次注入漏洞
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在PHP代码审计中，二次注入漏洞也是常见的安全问题之一。二次注入漏洞本质上就是SQL注入问题，但是它比普通的SQL注入漏洞更难利用。由于它依赖于代码逻辑而产生，因此常常需要手工挖掘。本文将对二次注入漏洞进行个别的场景介绍以及利用门槛分析。</p>
+<a id="more"></a>
+<h3 id="危险的is-numeric"><a href="#危险的is-numeric" class="headerlink" title="危险的is_numeric()"></a>危险的is_numeric()</h3><p>PHP中提供了is_numeric()函数来检测变量是否为数字或数字字符串。于是，一些程序员就直接利用该函数对变量进行鉴定后直接传入数据库，这将是很危险的行为。<br><img src="/2017/08/20/二次注入/is_num.png" alt=""><br>因为该函数接受的范围是比较广泛的。在PHP7.0.0版本以前，十六进制的字符串是被认为是数字字符串而返回ture的。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&lt;?php</div><div class="line"><span class="built_in">echo</span> is_numeric(1234);          <span class="comment"># 1</span></div><div class="line"><span class="built_in">echo</span> is_numeric(<span class="string">'1234'</span>);        <span class="comment"># 1</span></div><div class="line"><span class="built_in">echo</span> is_numeric(0x1234);        <span class="comment"># 1</span></div><div class="line"><span class="built_in">echo</span> is_numeric(<span class="string">'0x1234'</span>);      <span class="comment"># 1</span></div><div class="line"><span class="built_in">echo</span> is_numeric(<span class="string">'1234abc'</span>);     <span class="comment"># 0</span></div><div class="line">?&gt;</div></pre></td></tr></table></figure></p>
+<p>同时，MySQL数据库同样支持十六进制。于是，当我们将恶意构造的字符串转换成十六进制进行传参时，将能通过is_numeric()函数的判断而插入到数据库中，然后数据库会将十六进制转换回来。当该数据被取出直接进行SQL查询时，就会引发二次注入漏洞。<br>听起来好像很简单？哈哈但现实总是骨感的。要顺利触发这个漏洞场景，还需要以下条件：<br>（1）Vulnerable parameters 在数据库中定义的类型必须是字符串类型。若是int型就没戏了。<br>（2）Vulnerable parameters 参数插入/更新时的SQL语句中该字段不能在单引号中。<br>什么意思？看下面的例子:<br>首先在数据库中定义以下两个字段，id参数类型为int型，根据上面的（1），暂时无法利用。type参数为字符串型，为了更好地演示，我把长度也设置成足够的大。<br><img src="/2017/08/20/二次注入/shu.png" alt=""><br>当程序代码如下时，构造payload：type=”12’ union select database()#”,转换成十六进制：”type=0x31322720756e696f6e2073656c656374206461746162617365282923”，传入参数。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$id</span>=<span class="variable">$_GET</span>[<span class="string">'id'</span>];</div><div class="line"><span class="variable">$type</span>=<span class="variable">$_GET</span>[<span class="string">'type'</span>];</div><div class="line"><span class="keyword">if</span>(is_numeric(<span class="variable">$id</span>) &amp;&amp; is_numeric(<span class="variable">$type</span>))&#123;</div><div class="line">    <span class="variable">$query</span>=<span class="string">"INSERT INTO example (id,type) VALUES (<span class="variable">$id</span>,<span class="variable">$type</span>)"</span>;</div><div class="line">    mysqli_query(<span class="variable">$conn</span>,<span class="variable">$query</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>type参数的十六进制字符串插入后被mysql数据库转换回来：<br><img src="/2017/08/20/二次注入/-&#39;.png" alt=""><br>但当程序代码如下时（注意type参数在单引号中），构造payload：type=”12’ union select database()#”,转换成十六进制：”type=0x31322720756e696f6e2073656c656374206461746162617365282923”，传入参数。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$id</span>=<span class="variable">$_GET</span>[<span class="string">'id'</span>];</div><div class="line"><span class="variable">$type</span>=<span class="variable">$_GET</span>[<span class="string">'type'</span>];</div><div class="line"><span class="keyword">if</span>(is_numeric(<span class="variable">$id</span>) &amp;&amp; is_numeric(<span class="variable">$type</span>))&#123;</div><div class="line">    <span class="variable">$query</span>=<span class="string">"INSERT INTO example (id,type) VALUES (<span class="variable">$id</span>,'<span class="variable">$type</span>')"</span>;</div><div class="line">    mysqli_query(<span class="variable">$conn</span>,<span class="variable">$query</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>type参数被认为是字符串插入，mysql数据库不会对其进行转换，仍然是十六进制模式的字符串。<br><img src="/2017/08/20/二次注入/+&#39;.png" alt=""><br>于是，当我们碰巧遇到满足上述两个条件的场景时，才能顺利地把我们的代码插进数据库了。当然了，到此只完成了一半的工作。<br>漏洞真正触发的场景，是当这个参数从数据库中取出时，没有经过任何处理直接拼接在SQL查询语句中，从而导致SQL注入漏洞。下面代码$type_out为从数据库取出的我们构造的type参数，然后直接进行拼接查询。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="variable">$type_out</span>=<span class="variable">$result_arr</span>[<span class="string">'type'</span>];</div><div class="line"><span class="variable">$query</span>=<span class="string">"SELECT id FROM example WHERE  type='<span class="variable">$type_out</span>'"</span>;</div></pre></td></tr></table></figure></p>
+<p>此时实际查询语句如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">SELECT id FROM example WHERE <span class="built_in">type</span>=<span class="string">'12'</span> union select database()<span class="comment">#'</span></div></pre></td></tr></table></figure></p>
+<p>由于type=’12’的数据行不存在，因此将打印出数据库名database()。</p>
+<h3 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h3><p>本文主要分析伴随is_numeric()产生的二次注入问题。实际上，二次注入的场景纷繁复杂，更多地取决于程序员的代码逻辑。上面写的仅仅是其中的一个小点，更多的方式、场景还需要在实际代码审计中慢慢积累。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://lemon666.github.io/2017/08/20/二次注入/" data-id="cj6kos67x00008ctpb0r8ui5e" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php/">php</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/07/28/php-object-injection/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">PHP Object Injection</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/安全研究/">安全研究</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/">php</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/php/" style="font-size: 10px;">php</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">July 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/08/20/二次注入/">浅谈二次注入漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/07/28/php-object-injection/">PHP Object Injection</a>
+          </li>
+        
+          <li>
+            <a href="/2017/07/27/php弱类型/">PHP弱类型</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 lemon<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
