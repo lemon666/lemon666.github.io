@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>php://input,php://filter in LFI | Lemon&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="PHP提供了一些杂项输入/输出（IO）流，允许访问 PHP 的输入输出流、标准输入输出和错误描述符，内存中、磁盘备份的临时文件流以及可以操作其他读取写入文件资源的过滤器。使用php://访问各个输入/输出流。其中php://input是个可以访问请求的原始数据的只读流。php://filter则是一种元封装器， 设计用于数据流打开时的筛选过滤应用。二者在本地文件包含漏洞中能够得到很好的利用。">
+<meta name="keywords" content="php">
+<meta property="og:type" content="article">
+<meta property="og:title" content="php:&#x2F;&#x2F;input,php:&#x2F;&#x2F;filter in LFI">
+<meta property="og:url" content="https://lemon666.github.io/2017/09/12/stream/index.html">
+<meta property="og:site_name" content="Lemon&#39;s Blog">
+<meta property="og:description" content="PHP提供了一些杂项输入/输出（IO）流，允许访问 PHP 的输入输出流、标准输入输出和错误描述符，内存中、磁盘备份的临时文件流以及可以操作其他读取写入文件资源的过滤器。使用php://访问各个输入/输出流。其中php://input是个可以访问请求的原始数据的只读流。php://filter则是一种元封装器， 设计用于数据流打开时的筛选过滤应用。二者在本地文件包含漏洞中能够得到很好的利用。">
+<meta property="og:image" content="https://lemon666.github.io/2017/09/12/stream/1.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/09/12/stream/2.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/09/12/stream/3.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/09/12/stream/4.png">
+<meta property="og:image" content="https://lemon666.github.io/2017/09/12/stream/5.png">
+<meta property="og:updated_time" content="2017-09-12T12:19:08.385Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="php:&#x2F;&#x2F;input,php:&#x2F;&#x2F;filter in LFI">
+<meta name="twitter:description" content="PHP提供了一些杂项输入/输出（IO）流，允许访问 PHP 的输入输出流、标准输入输出和错误描述符，内存中、磁盘备份的临时文件流以及可以操作其他读取写入文件资源的过滤器。使用php://访问各个输入/输出流。其中php://input是个可以访问请求的原始数据的只读流。php://filter则是一种元封装器， 设计用于数据流打开时的筛选过滤应用。二者在本地文件包含漏洞中能够得到很好的利用。">
+<meta name="twitter:image" content="https://lemon666.github.io/2017/09/12/stream/1.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Lemon&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Lemon&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Zoeken"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://lemon666.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-stream" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/09/12/stream/" class="article-date">
+  <time datetime="2017-09-12T09:28:23.000Z" itemprop="datePublished">2017-09-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/安全研究/">安全研究</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      php://input,php://filter in LFI
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>PHP提供了一些杂项输入/输出（IO）流，允许访问 PHP 的输入输出流、标准输入输出和错误描述符，内存中、磁盘备份的临时文件流以及可以操作其他读取写入文件资源的过滤器。使用php://访问各个输入/输出流。其中php://input是个可以访问请求的原始数据的只读流。php://filter则是一种元封装器， 设计用于数据流打开时的筛选过滤应用。二者在本地文件包含漏洞中能够得到很好的利用。</p>
+<a id="more"></a>
+<h3 id="本地包含漏洞"><a href="#本地包含漏洞" class="headerlink" title="本地包含漏洞"></a>本地包含漏洞</h3><p>文件包含漏洞是程序员通过PHP的函数引入文件时，由于传入的变量没有经过合理的校验，导致进行文件包含时的文件泄露或代码注入。如下示例代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&lt;?php</div><div class="line">    if($_GET[&apos;file&apos;]) &#123;</div><div class="line">      include $_GET[&apos;file&apos;];</div><div class="line">    &#125;</div><div class="line">    else &#123;</div><div class="line">      include &apos;default.php&apos;;</div><div class="line">    &#125;</div><div class="line">?&gt;</div></pre></td></tr></table></figure></p>
+<p>$_GET[‘file’]为用户可控变量，如下提交数据可读取1.txt文件内容。<br><img src="/2017/09/12/stream/1.png" alt=""><br>此时我们还想读取phpinfo.php的文件内容，于是修改file=phpinfo.php，但页面显示的是phpinfo.php执行后的结果，并不能读取我们想要的源码。<br><img src="/2017/09/12/stream/2.png" alt=""></p>
+<h3 id="php-filter-in-LFI"><a href="#php-filter-in-LFI" class="headerlink" title="php://filter in LFI"></a>php://filter in LFI</h3><p>php://filter/read=允许对读链进行筛选，于是在文件包含漏洞中我们可以应用base64编码的方式读取指定文件的源代码，如上的phpinfo.php<br><img src="/2017/09/12/stream/3.png" alt=""><br>得到编码后的字符串，此时只需对字符串进行解码即可得到文件源代码<br><img src="/2017/09/12/stream/4.png" alt=""></p>
+<h3 id="php-input-in-LFI"><a href="#php-input-in-LFI" class="headerlink" title="php://input in LFI"></a>php://input in LFI</h3><p>在文件包含漏洞中，我们首先想到的是任意文件读取操作，但若对方服务器PHP配置文件里面的allow_url_include为打开状态，使用php://input在可以将文件包含漏洞进一步转化为命令执行漏洞。<br>仍然是上述示例脚本，我们修改file=php://input，然后post想要执行的命令脚本，如下命令成功打开计算器。<br><img src="/2017/09/12/stream/5.png" alt=""></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://lemon666.github.io/2017/09/12/stream/" data-id="cj7hkenpq0005fgtpxafuhi2b" class="article-share-link">Delen</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php/">php</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/08/20/二次注入/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Ouder</strong>
+      <div class="article-nav-title">浅谈二次注入漏洞</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categorieën</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/安全研究/">安全研究</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Labels</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/">php</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/php/" style="font-size: 10px;">php</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archieven</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">July 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recente berichten</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/09/12/stream/">php://input,php://filter in LFI</a>
+          </li>
+        
+          <li>
+            <a href="/2017/08/20/二次注入/">浅谈二次注入漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/07/28/php-object-injection/">PHP Object Injection</a>
+          </li>
+        
+          <li>
+            <a href="/2017/07/27/php弱类型/">PHP弱类型</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 lemon<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
