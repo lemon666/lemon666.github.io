@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>PHP变量使用双引号的安全隐患 | Lemon&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="在PHP系统开发过程中，许多程序员对变量使用单引号和双引号没有明确的认识，于是常常在他们的疏漏中导致了一系列的安全问题，本文将详细介绍对PHP变量使用双引号的安全隐患。">
+<meta name="keywords" content="php">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP变量使用双引号的安全隐患">
+<meta property="og:url" content="https://lemon666.github.io/2018/04/17/double-quotes/index.html">
+<meta property="og:site_name" content="Lemon&#39;s Blog">
+<meta property="og:description" content="在PHP系统开发过程中，许多程序员对变量使用单引号和双引号没有明确的认识，于是常常在他们的疏漏中导致了一系列的安全问题，本文将详细介绍对PHP变量使用双引号的安全隐患。">
+<meta property="og:image" content="https://lemon666.github.io/2018/04/17/double-quotes/1.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/04/17/double-quotes/2.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/04/17/double-quotes/3.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/04/17/double-quotes/4.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/04/17/double-quotes/5.jpg">
+<meta property="og:updated_time" content="2018-04-17T07:13:14.423Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PHP变量使用双引号的安全隐患">
+<meta name="twitter:description" content="在PHP系统开发过程中，许多程序员对变量使用单引号和双引号没有明确的认识，于是常常在他们的疏漏中导致了一系列的安全问题，本文将详细介绍对PHP变量使用双引号的安全隐患。">
+<meta name="twitter:image" content="https://lemon666.github.io/2018/04/17/double-quotes/1.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="Lemon&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Lemon&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://lemon666.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-double-quotes" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/04/17/double-quotes/" class="article-date">
+  <time datetime="2018-04-17T02:07:24.000Z" itemprop="datePublished">2018-04-17</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/安全研究/">安全研究</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PHP变量使用双引号的安全隐患
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在PHP系统开发过程中，许多程序员对变量使用单引号和双引号没有明确的认识，于是常常在他们的疏漏中导致了一系列的安全问题，本文将详细介绍对PHP变量使用双引号的安全隐患。<br><a id="more"></a><br>在开始之前，我们先来看一个问题，当你要定义一个字符串It’s me!为变量a时，你的第一反应是怎么写？相信很多人会这样写：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&lt;?php</div><div class="line">$a=&quot;It&apos;s me!&quot;;</div><div class="line">...</div><div class="line">?&gt;</div></pre></td></tr></table></figure></p>
+<p>由于字符串中包含单引号，很多人就自然而然地想到使用双引号来括住这个字符串。当然，这样的写法并不是错的。只是当这种意识成为了习惯则可能会忽略了双引号使用的一些安全问题。</p>
+<h3 id="PHP单、双引号的区别"><a href="#PHP单、双引号的区别" class="headerlink" title="PHP单、双引号的区别"></a>PHP单、双引号的区别</h3><p>在PHP中，对单引号字符串和双引号字符串的处理是不相同的。单引号字符串中的内容会被认为是普通文本，而双引号字符串中的内容则会被解析并替换。因此PHP语法分析器对双引号字符串的处理更为复杂，当然处理速度也相对更慢。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&lt;?php</div><div class="line">$a = 11;</div><div class="line">$b = &apos;a = $a&apos;;</div><div class="line">$c = &quot;a = $a&quot;;</div><div class="line">echo $b;     //输出：a = $a</div><div class="line">echo $c;     //输出：a = 11</div><div class="line">?&gt;</div></pre></td></tr></table></figure></p>
+<p>可以看到双引号中的$a被解析替换成了11，那么如果双引号内是如下恶意内容呢？<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&lt;?php</div><div class="line">$b = &apos;a = $&#123;phpinfo()&#125;&apos;;</div><div class="line">$c = &quot;a = $&#123;phpinfo()&#125;&quot;;</div><div class="line">?&gt;</div></pre></td></tr></table></figure></p>
+<p>那么双引号中的phpinfo()将被执行！</p>
+<h3 id="不安全使用双引号引发的漏洞"><a href="#不安全使用双引号引发的漏洞" class="headerlink" title="不安全使用双引号引发的漏洞"></a>不安全使用双引号引发的漏洞</h3><h5 id="齐博cms-v7-0后台getshell"><a href="#齐博cms-v7-0后台getshell" class="headerlink" title="齐博cms v7.0后台getshell"></a>齐博cms v7.0后台getshell</h5><p><strong>0x01 漏洞分析</strong><br>inc/class.inc.php中GuideFidCache函数在写导航条缓存文件时，在变量$GuideFid[$fid]中使用双引号：<br><img src="/2018/04/17/double-quotes/1.jpg" alt=""><br>而变量$GuideFid[$fid]的值中拼接了SortFather函数的返回值，定位到SortFather函数，其中$name为用户可控变量：<br><img src="/2018/04/17/double-quotes/2.jpg" alt=""><br><strong>0x02 漏洞利用</strong><br>在后台文章功能中，我们创建一个栏目，在栏目名称中输入”${phpinfo()}”：<br><img src="/2018/04/17/double-quotes/3.jpg" alt=""><br>此时，在data/guide_fid.php中可以看到，$name变量内容拼接在$GuideFid[$fid]变量内容中，并以双引号括住（哈哈这里$GuideFid变量内容正是很多单引号呢）：<br><img src="/2018/04/17/double-quotes/4.jpg" alt=""><br>然后访问data/guide_fid.php，phpinfo()被执行，页面输出了PHP配置信息：<br><img src="/2018/04/17/double-quotes/5.jpg" alt=""></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://lemon666.github.io/2018/04/17/double-quotes/" data-id="cjg3c3pk10000gdubdvq206ll" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php/">php</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/09/12/stream/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">php://input,php://filter in LFI</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/安全研究/">安全研究</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/">php</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/php/" style="font-size: 10px;">php</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">April 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">July 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/04/17/double-quotes/">PHP变量使用双引号的安全隐患</a>
+          </li>
+        
+          <li>
+            <a href="/2017/09/12/stream/">php://input,php://filter in LFI</a>
+          </li>
+        
+          <li>
+            <a href="/2017/08/20/二次注入/">浅谈二次注入漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/07/28/php-object-injection/">PHP Object Injection</a>
+          </li>
+        
+          <li>
+            <a href="/2017/07/27/php弱类型/">PHP弱类型</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 lemon<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
