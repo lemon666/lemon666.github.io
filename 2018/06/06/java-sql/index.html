@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Java源码审计学习——SQL注入篇 | Lemon&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本文是Java源码审计的入门级文章，主要讲述Java开源漏洞靶场——WebGoat的SQL注入习题源码审计思路并提出修复方案。">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java源码审计学习——SQL注入篇">
+<meta property="og:url" content="https://lemon666.github.io/2018/06/06/java-sql/index.html">
+<meta property="og:site_name" content="Lemon&#39;s Blog">
+<meta property="og:description" content="本文是Java源码审计的入门级文章，主要讲述Java开源漏洞靶场——WebGoat的SQL注入习题源码审计思路并提出修复方案。">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/0-0.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/1-1.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/2-2.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/3.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/4.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/5.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/6.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/7.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/8-8.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/9-9.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/10.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/11.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/12.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/13.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/14.jpg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/15-0.jpeg">
+<meta property="og:image" content="https://lemon666.github.io/2018/06/06/java-sql/15.jpeg">
+<meta property="og:updated_time" content="2018-06-07T02:22:02.273Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java源码审计学习——SQL注入篇">
+<meta name="twitter:description" content="本文是Java源码审计的入门级文章，主要讲述Java开源漏洞靶场——WebGoat的SQL注入习题源码审计思路并提出修复方案。">
+<meta name="twitter:image" content="https://lemon666.github.io/2018/06/06/java-sql/0-0.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="Lemon&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Lemon&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://lemon666.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-java-sql" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/06/06/java-sql/" class="article-date">
+  <time datetime="2018-06-06T07:31:09.000Z" itemprop="datePublished">2018-06-06</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/安全研究/">安全研究</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Java源码审计学习——SQL注入篇
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本文是Java源码审计的入门级文章，主要讲述Java开源漏洞靶场——WebGoat的SQL注入习题源码审计思路并提出修复方案。<br><a id="more"></a></p>
+<h3 id="0x01-Easy-SQL-Injection"><a href="#0x01-Easy-SQL-Injection" class="headerlink" title="0x01 Easy SQL Injection"></a>0x01 Easy SQL Injection</h3><p>首先是字符型注入，我们先不看题目，直接找到对应的源码文件SqlInjectionLesson5a.java，可以发现它使用JDBC连接数据库。<br><img src="/2018/06/06/java-sql/0-0.jpg" alt=""><br>往下看可以看到代码中POST参数accout传入到函数injectableQuery，然后就直接拼接到了SQL语句中，因此导致SQL注入漏洞。<br><img src="/2018/06/06/java-sql/1-1.jpg" alt=""><br>此时查看题目要求输出所有的user，因此如下输入Accout Name使SQL语句为真即可<br><img src="/2018/06/06/java-sql/2-2.jpg" alt=""><br>类似的，数字型的SQL注入此处便不再叙述…<br><img src="/2018/06/06/java-sql/3.jpg" alt=""></p>
+<h3 id="0x02-Blind-SQL-Injection"><a href="#0x02-Blind-SQL-Injection" class="headerlink" title="0x02 Blind SQL Injection"></a>0x02 Blind SQL Injection</h3><p>首先我们看到题目的场景是一个注册和登录操作：<br><img src="/2018/06/06/java-sql/4.jpg" alt=""><br>然后直接找到对应源代码文件，首先是注册函数，函数获得username_reg、email_reg和password_reg三个POST参数后对其进行简单的非空检查和长度检查，再查询数据库核对username_reg是否已被注册，此时查询语句直接拼接用户传入的username_reg参数。查询结果不为空则认为该用户名已被注册，否则认为用户名可用并将数据插入到数据库中。此时的insert语句使用了prepareStatement预编译。<br><img src="/2018/06/06/java-sql/5.jpg" alt=""><br><img src="/2018/06/06/java-sql/6.jpg" alt=""><br>往下看是登录函数，可以看到登录函数中的SQL语句也进行了预编译：<br><img src="/2018/06/06/java-sql/7.jpg" alt=""><br>因此可以确定，该题需要利用注册函数中的SQL盲注，构造语句为真时则对应输出user.exists，构造语句为假时则对应输出user.created，则猜测数据库名称长度如下：<br><img src="/2018/06/06/java-sql/8-8.jpg" alt=""><br><img src="/2018/06/06/java-sql/9-9.jpg" alt=""><br>可得数据库名称长度为11，然后按位猜测数据库名称：<br><img src="/2018/06/06/java-sql/10.jpg" alt=""><br>编写脚本跑出数据库名：<br><img src="/2018/06/06/java-sql/11.jpg" alt=""></p>
+<h3 id="0x03-Order-by-clause"><a href="#0x03-Order-by-clause" class="headerlink" title="0x03 Order by clause"></a>0x03 Order by clause</h3><p>下题要求我们从order by字段进行注入<br><img src="/2018/06/06/java-sql/12.jpg" alt=""><br>同样地，我们先打开源代码文件：<br><img src="/2018/06/06/java-sql/13.jpg" alt=""><br>看到sort函数把参数column拼接到了SQL语句中，但是此处用到了prepareStatement预编译，那么如何进行注入呢？经了解，HSQLDB数据库的语法规则规定orderExpression可以为selectExpression，并且使用时不受prepareStatement的影响。<br><img src="/2018/06/06/java-sql/14.jpg" alt=""><br>因此，可利用布尔式进行注入，如猜测数据集名长度：<br><img src="/2018/06/06/java-sql/15-0.jpeg" alt=""><br><img src="/2018/06/06/java-sql/15.jpeg" alt=""></p>
+<h3 id="0x04-Defence"><a href="#0x04-Defence" class="headerlink" title="0x04 Defence"></a>0x04 Defence</h3><p>为了减少SQL注入漏洞，我们应尽量使用PreparedStatement代替Statement，如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">String query = &quot;SELECT * FROM user_data WHERE last_name = &apos;&quot; + accountName + &quot;&apos;&quot;;</div><div class="line">Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);</div><div class="line">ResultSet results = statement.executeQuery(query);</div></pre></td></tr></table></figure></p>
+<p>应改写如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">String query = &quot;SELECT * FROM user_data WHERE last_name = ?&quot;;</div><div class="line">PreparedStatement statement = connection.prepareStatement(query);</div><div class="line">statement.setString(1, accountName);</div><div class="line">ResultSet results = statement.executeQuery();</div></pre></td></tr></table></figure></p>
+<p>而对于order by字段的注入，开发者应设置白名单来验证ORDER语句的值。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://lemon666.github.io/2018/06/06/java-sql/" data-id="cji3x7lf00000twub11afgjbx" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/">java</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2018/04/17/double-quotes/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">PHP变量使用双引号的安全隐患</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/安全研究/">安全研究</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/java/">java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/">php</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/java/" style="font-size: 10px;">java</a> <a href="/tags/php/" style="font-size: 20px;">php</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">June 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">April 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">July 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/06/06/java-sql/">Java源码审计学习——SQL注入篇</a>
+          </li>
+        
+          <li>
+            <a href="/2018/04/17/double-quotes/">PHP变量使用双引号的安全隐患</a>
+          </li>
+        
+          <li>
+            <a href="/2017/09/12/stream/">php://input,php://filter in LFI</a>
+          </li>
+        
+          <li>
+            <a href="/2017/08/20/二次注入/">浅谈二次注入漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/07/28/php-object-injection/">PHP Object Injection</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 lemon<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
