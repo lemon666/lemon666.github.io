@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>FastJson反序列化漏洞分析 | Lemon&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本文是FastJson反序列化漏洞的分析文章，通过对该漏洞的分析我们可以了解到FastJson反序列化时程序运行的逻辑，可作为Java反序列化漏洞学习的参考文章。">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FastJson反序列化漏洞分析">
+<meta property="og:url" content="https://lemon666.github.io/2018/09/11/fastjson/index.html">
+<meta property="og:site_name" content="Lemon&#39;s Blog">
+<meta property="og:description" content="本文是FastJson反序列化漏洞的分析文章，通过对该漏洞的分析我们可以了解到FastJson反序列化时程序运行的逻辑，可作为Java反序列化漏洞学习的参考文章。">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/fast1.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/fast2.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/parse1.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/parse2.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/parse3.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/poc1.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/poc2.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/d1.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao1.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao2.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao3.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao4.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/d2.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao5.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao6.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao7.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao8.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao9.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao10.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao11.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao12.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao13.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao14.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao15.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao16.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao17.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao18.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao19.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao19-1.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao20.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao21.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao22.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao23.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao24.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao25.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao26.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao27.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao28.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao29.png">
+<meta property="og:image" content="https://lemon666.github.io/2018/09/11/fastjson/diao30-1.png">
+<meta property="og:updated_time" content="2018-09-11T12:48:57.941Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FastJson反序列化漏洞分析">
+<meta name="twitter:description" content="本文是FastJson反序列化漏洞的分析文章，通过对该漏洞的分析我们可以了解到FastJson反序列化时程序运行的逻辑，可作为Java反序列化漏洞学习的参考文章。">
+<meta name="twitter:image" content="https://lemon666.github.io/2018/09/11/fastjson/fast1.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Lemon&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Lemon&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://lemon666.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-fastjson" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/09/11/fastjson/" class="article-date">
+  <time datetime="2018-09-11T12:18:30.000Z" itemprop="datePublished">2018-09-11</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/安全研究/">安全研究</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      FastJson反序列化漏洞分析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本文是FastJson反序列化漏洞的分析文章，通过对该漏洞的分析我们可以了解到FastJson反序列化时程序运行的逻辑，可作为Java反序列化漏洞学习的参考文章。<br><a id="more"></a></p>
+<h2 id="JSON"><a href="#JSON" class="headerlink" title="JSON"></a>JSON</h2><p>Json即JavaScript对象表示法，是一种轻量级的数据交换格式。易于人阅读和编写，同时也易于机器解析和生成。JSON建构于两种结构：</p>
+<ol>
+<li>“名称/值”对的集合。<br> <code>{&quot;name&quot;:&quot;John&quot;, &quot;salary&quot;:20000, &quot;wife&quot;:null }</code></li>
+<li>值的有序列表。<br> <code>[ &quot;apple&quot;, &quot;banana&quot;, &quot;peach&quot; ]</code><br>值（value）可以是双引号括起来的字符串、数值、true、false、null、对象或者数组。</li>
+</ol>
+<h2 id="FastJson"><a href="#FastJson" class="headerlink" title="FastJson"></a>FastJson</h2><p>Fastjson是阿里巴巴公司开发的一个Java语言编写的高性能的JSON处理器。它采用一种“假定有序快速匹配”的算法，号称是目前Java语言中最快的JSON库。Fastjson接口简单易用，已经被广泛使用在缓存序列化、协议交互、Web输出、Android客户端等多种应用场景。它提供两个主要接口toJSONString()和 parseObject()进行序列化和反序列化。<br><img src="/2018/09/11/fastjson/fast1.png" alt=""><br><img src="/2018/09/11/fastjson/fast2.png" alt=""></p>
+<h2 id="parseObject"><a href="#parseObject" class="headerlink" title="parseObject()"></a>parseObject()</h2><p>parseObject()是FastJson提供的反序列化接口，它默认仅反序列化公开的属性和域。在某些场景下，反序列化需要支持NonPublicField，于是FastJson在1.2.22版本之后开始提供相应的支持。对于以下的一个User类，我们来看一下Feature.SupportNonPublicField属性加上与无的反序列化结果。<br>设置User类的id属性为私有变量：<br><img src="/2018/09/11/fastjson/parse1.png" alt=""><br>反序列化后打印对象的属性和值，发现id的值为0。<br><img src="/2018/09/11/fastjson/parse2.png" alt=""><br>加上Feature.SupportNonPublicField属性进行反序列化后，打印对象的属性和值，发现id成功被赋值为11。<br><img src="/2018/09/11/fastjson/parse3.png" alt=""></p>
+<p>了解以前背景知识后，下面我们开始来看FastJson反序列化漏洞。</p>
+<h2 id="FastJson-反序列化漏洞"><a href="#FastJson-反序列化漏洞" class="headerlink" title="FastJson 反序列化漏洞"></a>FastJson 反序列化漏洞</h2><h4 id="漏洞描述"><a href="#漏洞描述" class="headerlink" title="漏洞描述"></a>漏洞描述</h4><p>2017年3月15日，FastJson官方发布安全公告表示fastjson在1.2.24及之前版本存在远程代码执行高危安全漏洞。漏洞产生的原因是由于fastjson反序列化Json字符串为Java对象时autoType没有做正确的检测处理。安全升级包禁用了部分autotype的功能，也就是”@type”这种指定类型的功能会被限制在一定范围内使用。</p>
+<h4 id="利用方式"><a href="#利用方式" class="headerlink" title="利用方式"></a>利用方式</h4><p>漏洞利用方式有两种，本文仅分析基于TemplatesImpl利用方式。</p>
+<ul>
+<li>基于TemplatesImpl</li>
+<li>基于JNDI</li>
+</ul>
+<h4 id="基于TemplatesImpl"><a href="#基于TemplatesImpl" class="headerlink" title="基于TemplatesImpl"></a>基于TemplatesImpl</h4><h5 id="Poc"><a href="#Poc" class="headerlink" title="Poc"></a>Poc</h5><p>为了让大家更清晰地知道poc含义，使用了2个文件来展示。首先以下文件定义一个Test类，最终执行的命令写在该类的无参构造函数中。它必须继承AbstractTranslet类，这是Test类能够被实例化的条件。而在AbstractTranslet类中，transform函数是抽象函数或接口，因此需要进行重写。<br><img src="/2018/09/11/fastjson/poc1.png" alt=""><br>下面第二个文件我们直接看到text1，它是实际的payload，type指定反序列化的类为TemplatesImpl类，TemplatesImpl类在jdk包中存在。然后定义属性_bytecodes，值为evilcode，往上看evilcode是使用readclass函数读出的Test类文件的字节数组，再到_name和_tfactory，它们的存在与否在反序列化过程中会影响到调用链。而_outputProperties能够使得getOutputProperties函数得以调用，从而导致Test类能够被实例化。以上属性均为私有变量，需要Feature.SupportNonPublicField条件来触发。<br><img src="/2018/09/11/fastjson/poc2.png" alt=""></p>
+<h5 id="调用链"><a href="#调用链" class="headerlink" title="调用链"></a>调用链</h5><p>大致调用链为下图所示，可以把它分为两个部分，左边部分获取并保存指定反序列化类中的成员变量、setter、getter。右边部分对传进来的JSON字符串进行逐个字段的解析，调用相应的setter、getter进行变量赋值。<br><img src="/2018/09/11/fastjson/diao.png" alt=""></p>
+<h5 id="调用过程"><a href="#调用过程" class="headerlink" title="调用过程"></a>调用过程</h5><p>首先来看第一部分<br><img src="/2018/09/11/fastjson/d1.png" alt=""><br>反序列化开始时，scanSymbol函数会扫描出字段”@type”，然后扫描@type后面的内容获取对应的类并进行加载。<br><img src="/2018/09/11/fastjson/diao1.png" alt=""><br><img src="/2018/09/11/fastjson/diao2.png" alt=""><br>之后会来到JavaBeanInfo的build函数，该函数会在类里声明的变量和方法列表中筛选出符合条件的一些setter或getter方法，根据方法名提取出变量名，放入fieldlist中。筛选完成后构成JavaBeanInfo返回。<br><img src="/2018/09/11/fastjson/diao3.png" alt=""><br>构成的JavaBeanInfo会被传入JavaBeanDeserializer()中，生成sortedFieldDeserializers数组。<br><img src="/2018/09/11/fastjson/diao4.png" alt=""><br>接下来是第二部分<br><img src="/2018/09/11/fastjson/d2.png" alt=""><br>scanSymbol函数继续对Json字符串进行解析，扫描到第一个属性字段”_bytecodes”。<br><img src="/2018/09/11/fastjson/diao5.png" alt=""><br>然后会进入到parseField函数，parseField函数中调用到的smartMatch函数会把”_bytecodes”字段的下划线去掉，供getFieldDeserializer函数调用。<br><img src="/2018/09/11/fastjson/diao6.png" alt=""><br><img src="/2018/09/11/fastjson/diao7.png" alt=""><br>在getFieldDeserializer函数中，会将参数与sortedFieldDeserializers数组中的每个fieldInfo.name进行对比，很明显，本次匹配不成功。<br><img src="/2018/09/11/fastjson/diao8.png" alt=""><br>于是返回null的fieldDeserializer，则程序获取该类所有定义的域，得到_bytecode变量信息来生成一个新的fieldDeserializer。<br><img src="/2018/09/11/fastjson/diao9.png" alt=""><br>然后通过fieldValueDeserilizer.deserialze函数获得_bytecodes变量的值。<br><img src="/2018/09/11/fastjson/diao10.png" alt=""><br>deserialze函数中由于_bytecodes变量为字节数组会满足其中的条件进入到bytesValue函数，bytesValue函数会对其进行Base64解密。这也是Poc中对其进行Base64加密的原因。<br><img src="/2018/09/11/fastjson/diao11.png" alt=""><br><img src="/2018/09/11/fastjson/diao12.png" alt=""><br>得到value后进入setValue函数进行赋值。<br><img src="/2018/09/11/fastjson/diao13.png" alt=""><br>下面是_name字段，处理流程跟上述一致。scanSymbol函数扫描到属性字段”_name”。<br><img src="/2018/09/11/fastjson/diao14.png" alt=""><br>进入smartMatch函数把字段的下划线去掉，供getFieldDeserializer函数调用。<br><img src="/2018/09/11/fastjson/diao15.png" alt=""><br><img src="/2018/09/11/fastjson/diao16.png" alt=""><br>将参数与sortedFieldDeserializers数组中的每个fieldInfo.name进行对比。<br><img src="/2018/09/11/fastjson/diao17.png" alt=""><br>与sortedFieldDeserializers数组匹配不成功，生成一个新的fieldDeserializer。<br><img src="/2018/09/11/fastjson/diao18.png" alt=""><br>通过fieldValueDeserilizer.deserialze函数得到value，进入setValue函数进行赋值。<br><img src="/2018/09/11/fastjson/diao19.png" alt=""><br>_tfactory字段处理过程一致，此处不再展示。<br>而_outputProperties字段经smartMatch函数处理后在getFieldDeserializer函数中与sortedFieldDeserializers数组中的outputProperties字段匹配成功，直接返回对应的sortedFieldDeserializers作为fieldDeserializer。<br><img src="/2018/09/11/fastjson/diao19-1.png" alt=""><br><img src="/2018/09/11/fastjson/diao20.png" alt=""><br>通过fieldValueDeserilizer.deserialze函数获得变量的值后进入setValue函数。<br><img src="/2018/09/11/fastjson/diao21.png" alt=""><br>在setValue函数中，TemplatesImpl实例中的method：getOutputProperties函数会被调用。<br><img src="/2018/09/11/fastjson/diao22.png" alt=""><br>在getOutputProperties函数中会调用newTransformer()。<br><img src="/2018/09/11/fastjson/diao23.png" alt=""><br>newTransformer函数中会调用getTransletInstance()。<br><img src="/2018/09/11/fastjson/diao24.png" alt=""><br>getTransletInstance函数中由于_class值为null，于是进入defineTransletClasses()。<br><img src="/2018/09/11/fastjson/diao25.png" alt=""><br>在defineTransletClasses函数中会把_bytecodes数组defineClass之后赋值给_class[i]，通过判断class Test的父类为AbstractTranslet，于是将_transletIndex赋值为i。<br><img src="/2018/09/11/fastjson/diao26.png" alt=""><br>然后实例化Class Test。<br><img src="/2018/09/11/fastjson/diao27.png" alt=""><br>无参构造函数被调用，弹出计算器。<br><img src="/2018/09/11/fastjson/diao28.png" alt=""></p>
+<h4 id="修复方法"><a href="#修复方法" class="headerlink" title="修复方法"></a>修复方法</h4><p>通过查看补丁发现，把原来的根据”@type”直接加载类的操作修改成checkAutoType函数。<br><img src="/2018/09/11/fastjson/diao29.png" alt=""><br>checkAutoType函数中提供了两种方式供开发者选择，一种为黑名单方式，一种为白名单方式。<br><img src="/2018/09/11/fastjson/diao30-1.png" alt=""><br>黑名单中包括了以下大类，白名单则需要开发者自己定义。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">denyList =</div><div class="line">“bsh,</div><div class="line">com.mchange,</div><div class="line">com.sun.,</div><div class="line">java.lang.Thread,</div><div class="line">java.net.Socket,</div><div class="line">java.rmi,</div><div class="line">javax.xml,</div><div class="line">org.apache.bcel,</div><div class="line">org.apache.commons.beanutils,</div><div class="line">org.apache.commons.collections.Transformer,</div><div class="line">org.apache.commons.collections.functors,</div><div class="line">org.apache.commons.collections4.comparators,</div><div class="line">org.apache.commons.fileupload,</div><div class="line">org.apache.myfaces.context.servlet,</div><div class="line">org.apache.tomcat,</div><div class="line">org.apache.wicket.util,</div><div class="line">org.codehaus.groovy.runtime,</div><div class="line">org.hibernate,</div><div class="line">org.jboss,</div><div class="line">org.mozilla.javascript,</div><div class="line">org.python.core,</div><div class="line">org.springframework”.split(&quot;,&quot;);</div></pre></td></tr></table></figure></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>由于上述FastJson反序列化漏洞利用条件实为苛刻，因此本文没有介绍在渗透测试中如何去发现该漏洞，而把重点放在了对FastJson反序列化漏洞产生过程的分析上，同学们学习完成后可以仔细斟酌FastJson反序列化时程序的逻辑，这将对以后的Java反序列化学习、研究及漏洞挖掘提供一定的帮助。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://lemon666.github.io/2018/09/11/fastjson/" data-id="cjlxpg57d0001byx0v3qxvztp" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/">java</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2018/06/06/java-sql/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Java源码审计学习——SQL注入篇</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/安全研究/">安全研究</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/java/">java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/">php</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/java/" style="font-size: 10px;">java</a> <a href="/tags/php/" style="font-size: 20px;">php</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">September 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">June 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">April 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">July 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/09/11/fastjson/">FastJson反序列化漏洞分析</a>
+          </li>
+        
+          <li>
+            <a href="/2018/06/06/java-sql/">Java源码审计学习——SQL注入篇</a>
+          </li>
+        
+          <li>
+            <a href="/2018/04/17/double-quotes/">PHP变量使用双引号的安全隐患</a>
+          </li>
+        
+          <li>
+            <a href="/2017/09/12/stream/">php://input,php://filter in LFI</a>
+          </li>
+        
+          <li>
+            <a href="/2017/08/20/二次注入/">浅谈二次注入漏洞</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 lemon<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
